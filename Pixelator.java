@@ -24,7 +24,7 @@ public class Pixelator {
         int[][] pixelArr = new int[picture.width() * picture.height()][5];
         for (int i = 0; i < picture.width(); i++) {
             for (int j = 0; j < picture.height(); j++) {
-                int pixelIndex = i + j * picture.height();
+                int pixelIndex = i + j * picture.width();
                 int RGBInt = picture.getRGB(i, j);
                 Color pixelColor = new Color(RGBInt);
 
@@ -132,9 +132,10 @@ public class Pixelator {
 
     public static void main(String[] args) {
         Pixelator pixelator = new Pixelator();
-        Picture picture = new Picture(new File("ATRZ5207.jpg"));
-        picture.show();
-        pixelator.pixelate(picture, 16);
-        picture.show();
+        String pictureName = "IMG_3254";
+        String pictureExt = ".jpeg";
+        Picture picture = new Picture(new File(pictureName + pictureExt));
+        pixelator.pixelate(picture, 64);
+        picture.save(pictureName + "_pixelated.png");
     }
 }

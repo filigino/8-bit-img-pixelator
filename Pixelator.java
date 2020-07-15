@@ -1,5 +1,5 @@
 /* 
- * Implement color quantization using the median cut algorithm.
+ * Implements color quantization using the median cut algorithm.
  * 
  * Uses Princeton's Picture library:
  * https://introcs.cs.princeton.edu/java/stdlib/javadoc/Picture.html
@@ -7,13 +7,13 @@
 
 
 import java.awt.Color;
-import java.io.File;
 import java.lang.Math;
 import java.util.Arrays;
 import java.util.Comparator;
 
 public class Pixelator {
-    private void pixelate(Picture picture, int numberOfColors) {
+    // New color palette must be a power of 2 since using median cut
+    public static void pixelate(Picture picture, int numberOfColors) {
         if (numberOfColors > 0 && ((numberOfColors & (numberOfColors - 1)) != 0)) {
             System.out.println("Not a power of 2");
             return;
@@ -37,7 +37,7 @@ public class Pixelator {
         }
 
         // Recursively call median cut algorithm for color quantization
-        this.splitIntoBuckets(pixelArr, depth);
+        splitIntoBuckets(pixelArr, depth);
 
         // Recolor original picture w new color palette
         for (int i = 0; i < pixelArr.length; i++) {
@@ -46,9 +46,9 @@ public class Pixelator {
         }
     }
 
-    private void splitIntoBuckets(int[][] pixelArr, int depth) {
+    private static void splitIntoBuckets(int[][] pixelArr, int depth) {
         if (depth == 0) {
-            this.colorQuantize(pixelArr);
+            colorQuantize(pixelArr);
             return;
         }
 
@@ -100,17 +100,19 @@ public class Pixelator {
         Arrays.sort(pixelArr,
             Comparator.comparingInt(a -> a[finalGreatestRange]));
 
-        this.splitIntoBuckets(
+        splitIntoBuckets(
             Arrays.copyOfRange(pixelArr, 0, pixelArr.length / 2),
             depth - 1
         );
-        this.splitIntoBuckets(
+        splitIntoBuckets(
             Arrays.copyOfRange(pixelArr, pixelArr.length / 2, pixelArr.length),
             depth - 1
         );
     }
 
-    private void colorQuantize(int[][] pixelArr) {
+    // Average RGB values of each pixel in bucket and overwrite them w average
+    // values
+    private static void colorQuantize(int[][] pixelArr) {
         int redAvg = 0;
         int greenAvg = 0;
         int blueAvg = 0;
@@ -131,11 +133,5 @@ public class Pixelator {
     }
 
     public static void main(String[] args) {
-        Pixelator pixelator = new Pixelator();
-        String pictureName = "IMG_3254";
-        String pictureExt = ".jpeg";
-        Picture picture = new Picture(new File(pictureName + pictureExt));
-        pixelator.pixelate(picture, 64);
-        picture.save(pictureName + "_pixelated.png");
     }
 }

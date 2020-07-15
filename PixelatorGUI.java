@@ -1,9 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.GridLayout;
 import java.io.File;
-import javax.swing.BorderFactory;
 import javax.swing.filechooser.*;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -13,69 +11,70 @@ import javax.swing.JPanel;
 
 public class PixelatorGUI implements ActionListener {
     JFrame frame;
-    JPanel panel;
 
-    JButton selectImageButton;
+    JPanel imagePanel;
+    JPanel buttonPanel;
+    JPanel colorsPanel;
+
+    JLabel imageLabel;
+    JLabel numberOfColorsLabel;
+
     JButton plusButton;
     JButton minusButton;
+    JButton selectImageButton;
     JButton pixelateButton;
-
-    JLabel numberOfColorsLabel;
-    JLabel selectedImageLabel;
+    JButton saveButton;
 
     Picture originalPicture;
+    Picture pixelatedPicture;
     int numberOfColors;
 
     public PixelatorGUI() {
         numberOfColors = 16;
-        selectImageButton = new JButton("Select File");
+
+        numberOfColorsLabel = new JLabel(Integer.toString(numberOfColors));
+        imageLabel = new JLabel(" ");
+
         plusButton = new JButton("+");
         minusButton = new JButton("-");
+        selectImageButton = new JButton("Select File");
         pixelateButton = new JButton("Pixelate!");
+        saveButton = new JButton("Save");
 
-        selectImageButton.addActionListener(this);
         plusButton.addActionListener(this);
         minusButton.addActionListener(this);
+        selectImageButton.addActionListener(this);
         pixelateButton.addActionListener(this);
+        saveButton.addActionListener(this);
 
-        numberOfColorsLabel = new JLabel("Number of Colors: "
-            + numberOfColors);
-        selectedImageLabel = new JLabel();
+        imagePanel = new JPanel();
+        imagePanel.add(imageLabel);
 
-        panel = new JPanel();
-        // top left bottom right
-        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 10, 30));
-        panel.setLayout(new GridLayout(0, 1));
-        panel.add(selectedImageLabel);
-        panel.add(selectImageButton);
-        panel.add(numberOfColorsLabel);
-        panel.add(plusButton);
-        panel.add(minusButton);
-        panel.add(pixelateButton);
+        buttonPanel = new JPanel();
+        buttonPanel.add(selectImageButton);
+        buttonPanel.add(pixelateButton);
+        buttonPanel.add(saveButton);
+
+        colorsPanel = new JPanel();
+        colorsPanel.add(new JLabel("Number of Colors"));
+        colorsPanel.add(minusButton);
+        colorsPanel.add(numberOfColorsLabel);
+        colorsPanel.add(plusButton);
 
         frame = new JFrame();
-        frame.add(panel, BorderLayout.CENTER);
+        frame.add(imagePanel, BorderLayout.PAGE_START);
+        frame.add(buttonPanel, BorderLayout.CENTER);
+        frame.add(colorsPanel, BorderLayout.PAGE_END);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("Pixelator");
-        frame.pack();
+        frame.setSize(300, 200);
         frame.setVisible(true);
+        frame.setLocationRelativeTo(null);
     }
 
     public void actionPerformed(ActionEvent e) {
         String command = e.getActionCommand();
-        if (command.equals("+")) {
-            if (numberOfColors < 1024) {
-                numberOfColors *= 2;
-                numberOfColorsLabel.setText("Number of Colors: "
-                    + numberOfColors);
-            }
-        } else if (command.equals("-")) {
-            if (numberOfColors > 2) {
-                numberOfColors /= 2;
-                numberOfColorsLabel.setText("Number of Colors: "
-                    + numberOfColors);
-            }
-        } else if (command.equals("Select File")) {
+        if (command.equals("Select File")) {
             JFileChooser fileChooser = new JFileChooser(
                 FileSystemView.getFileSystemView().getHomeDirectory()
             );
@@ -93,7 +92,7 @@ public class PixelatorGUI implements ActionListener {
             // if the user selects a file
             if (r == JFileChooser.APPROVE_OPTION) {
                 // set the label to the path of the selected file
-                selectedImageLabel.setText(
+                imageLabel.setText(
                     fileChooser.getSelectedFile().getName()
                 );
                 originalPicture = new Picture(new File(
@@ -102,9 +101,25 @@ public class PixelatorGUI implements ActionListener {
                 originalPicture.show();
             }
         } else if (command.equals("Pixelate!")) {
-            Picture picture = new Picture(originalPicture);
-            Pixelator.pixelate(picture, numberOfColors);
-            picture.show();
+            if (originalPicture != null) {
+                pixelatedPicture = new Picture(originalPicture);
+                Pixelator.pixelate(pixelatedPicture, numberOfColors);
+                pixelatedPicture.show();
+            }
+        } else if (command.equals("Save")) {
+            if (pixelatedPicture != null) {
+                pixelatedPicture.save(imageLabel.getText());
+            }
+        } else if (command.equals("+")) {
+            if (numberOfColors < 1024) {
+                numberOfColors *= 2;
+                numberOfColorsLabel.setText(Integer.toString(numberOfColors));
+            }
+        } else if (command.equals("-")) {
+            if (numberOfColors > 2) {
+                numberOfColors /= 2;
+                numberOfColorsLabel.setText(Integer.toString(numberOfColors));
+            }
         }
     }
 

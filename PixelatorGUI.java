@@ -1,6 +1,8 @@
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -11,29 +13,27 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
 public class PixelatorGUI implements ActionListener {
-    JFrame frame;
+    private final JFrame frame;
 
-    JPanel imagePanel;
-    JPanel buttonPanel;
-    JPanel colorsPanel;
+    private final JPanel imagePanel;
+    private final JPanel buttonPanel;
+    private final JPanel colorsPanel;
 
-    JLabel imageLabel;
-    JLabel numberOfColorsLabel;
+    private final JLabel imageLabel;
+    private final JLabel numberOfColorsLabel;
 
-    JButton plusButton;
-    JButton minusButton;
-    JButton selectImageButton;
-    JButton pixelateButton;
-    JButton saveButton;
+    private final JButton plusButton;
+    private final JButton minusButton;
+    private final JButton selectImageButton;
+    private final JButton pixelateButton;
+    private final JButton saveButton;
 
-    BufferedImage originalImage;
-    BufferedImage pixelatedImage;
-    int numberOfColors;
+    private BufferedImage originalImage;
+    private BufferedImage pixelatedImage;
+    private int numberOfColors;
 
     public PixelatorGUI() {
         numberOfColors = 16;
@@ -88,7 +88,7 @@ public class PixelatorGUI implements ActionListener {
             fileChooser.setDialogTitle("Select an image");
             
             FileNameExtensionFilter restrict = new FileNameExtensionFilter(
-                "Picture Files (*.png,*.jpg,*.jpeg)", "png", "jpg", "jpeg"
+                "Picture Files (*.png,*.jpg,*.jpeg,*.jfif)", "png", "jpg", "jpeg", "jfif"
             );
             fileChooser.addChoosableFileFilter(restrict);
 
@@ -97,24 +97,35 @@ public class PixelatorGUI implements ActionListener {
 
             // if the user selects a file
             if (r == JFileChooser.APPROVE_OPTION) {
-                // set the label to the path of the selected file
-                imageLabel.setText(
-                    fileChooser.getSelectedFile().getName()
-                );
                 try {
                     originalImage = ImageIO.read(
                         new File(fileChooser.getSelectedFile().getAbsolutePath()));
+                    if (originalImage.getWidth() != originalImage.getHeight()) {
+                        imageLabel.setText("Selected image is not a square");
+                        originalImage = null;
+                    } else {
+                        imageLabel.setText(
+                            fileChooser.getSelectedFile().getName()
+                        );
+                        Image image = originalImage;
+                        image = image.getScaledInstance(256, 256, Image.SCALE_DEFAULT);
+                        originalImage = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB_PRE);
+
+                        Graphics2D graphics = originalImage.createGraphics();                        
+                        graphics.drawImage(image, 0, 0, null);
+                        graphics.dispose();
+                        show(originalImage);
+                    }
                 } catch (IOException ioe) {
-                    System.out.println("IOException");
+                    ioe.printStackTrace();
                 }
-                show(originalImage);
             }
         } else if (command.equals("Pixelate!")) {
             if (originalImage != null) {
                 int width  = originalImage.getWidth();
                 int height = originalImage.getHeight();
                 pixelatedImage = new BufferedImage(width, height,
-                    BufferedImage.TYPE_INT_ARGB_PRE); // debug
+                    BufferedImage.TYPE_INT_ARGB_PRE);
 
                 for (int col = 0; col < width; col++)
                     for (int row = 0; row < height; row++)
@@ -126,7 +137,7 @@ public class PixelatorGUI implements ActionListener {
             }
         } else if (command.equals("Save")) {
             if (pixelatedImage != null) {
-                // pixelatedImage.save(imageLabel.getText()); // debug
+                save(pixelatedImage);
             }
         } else if (command.equals("+")) {
             if (numberOfColors < 1024) {
@@ -144,17 +155,30 @@ public class PixelatorGUI implements ActionListener {
     private void show(BufferedImage image) {
         JFrame frame = new JFrame();
 
-        JMenuBar menuBar = new JMenuBar();
-        JMenu menu = new JMenu("File");
-        menuBar.add(menu);
-        frame.setJMenuBar(menuBar);
-
         frame.setContentPane(new JLabel(new ImageIcon(image)));
         // f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setResizable(false);
         frame.pack();
         frame.setVisible(true);
+        frame.repaint();
+    }
+
+    private void save(BufferedImage image) {
+        File file = new File(imageLabel.getText());
+        String filename = file.getName();
+
+        String suffix = filename.substring(filename.lastIndexOf('.') + 1);
+        if ("jpg".equalsIgnoreCase(suffix) || "png".equalsIgnoreCase(suffix)) {
+            try {
+                ImageIO.write(image, suffix, file);
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        } else {
+            System.out.println("Error: filename must end in .jpg or .png");
+        }
     }
 
     public static void main(String[] args) {

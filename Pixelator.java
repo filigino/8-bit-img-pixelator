@@ -10,6 +10,7 @@ import java.awt.Color;
 import java.lang.Math;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 
 public class Pixelator {
     // New color palette must be a power of 2 since using median cut
@@ -18,6 +19,7 @@ public class Pixelator {
             System.out.println("Not a power of 2");
             return;
         }
+
         int depth = (int) (Math.log(numberOfColors) / Math.log(2));
 
         // Store RGB values and location of each pixel in array
@@ -44,6 +46,36 @@ public class Pixelator {
             picture.set(pixelArr[i][3], pixelArr[i][4],
                 new Color(pixelArr[i][0], pixelArr[i][1], pixelArr[i][2]));
         }
+
+        // Recolor larger pixels with dominant color from each
+        int pixelWidth = 8;
+        for (int i = 0; i < picture.width(); i = i + pixelWidth) {
+            for (int j = 0; j < picture.height(); j = j + pixelWidth) {
+                HashMap<Integer, Integer> colorFrequency = new HashMap<Integer, Integer>();
+                for (int k = 0; k < pixelWidth; k++) {
+                    for (int l = 0; l < pixelWidth; l++) {
+                        int color = picture.getRGB(i + k, j + l);
+                        int count = colorFrequency.getOrDefault(color, 0);
+                        colorFrequency.put(color, count + 1);
+                    }
+                }
+
+                int highestFrequency = 0;
+                int dominantColor = 0;
+                for (int k : colorFrequency.keySet()) {
+                    if (colorFrequency.get(k) > highestFrequency) {
+                        highestFrequency = colorFrequency.get(k);
+                        dominantColor = k;
+                    }
+                }
+                
+                for (int k = 0; k < pixelWidth; k++) {
+                    for (int l = 0; l < pixelWidth; l++) {
+                        picture.setRGB(i + k, j + l, dominantColor);
+                    }
+                }
+            }
+        }
     }
 
     private static void splitIntoBuckets(int[][] pixelArr, int depth) {
@@ -59,7 +91,6 @@ public class Pixelator {
         int greenMax = 0;
         int blueMin = 255;
         int blueMax = 0;
-
         for (int i = 0; i < pixelArr.length; i++) {
             if (pixelArr[i][0] < redMin) {
                 redMin = pixelArr[i][0];
@@ -85,7 +116,6 @@ public class Pixelator {
         int greenRange = greenMax - greenMin;
         int blueRange = blueMax - blueMin;
         int greatestRange = 0;
-
         if (redRange >= greenRange && redRange >= blueRange) {
             greatestRange = 0;
         } else if (greenRange >= redRange && greenRange >= blueRange) {
@@ -93,7 +123,6 @@ public class Pixelator {
         } else if (blueRange >= redRange && blueRange >= greenRange) {
             greatestRange = 2;
         }
-
         final int finalGreatestRange = greatestRange;
 
         // Sort by values in color channel w greatest range

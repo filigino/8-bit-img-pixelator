@@ -1,12 +1,9 @@
 /* 
  * Implements color quantization using the median cut algorithm.
- * 
- * Uses Princeton's Picture library:
- * https://introcs.cs.princeton.edu/java/stdlib/javadoc/Picture.html
  */
 
-
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.lang.Math;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -14,25 +11,26 @@ import java.util.HashMap;
 
 public class Pixelator {
     // New color palette must be a power of 2 since using median cut
-    public static void pixelate(Picture picture, int numberOfColors) {
+    public static void pixelate(BufferedImage image, int numberOfColors) {
         if (numberOfColors > 0 && ((numberOfColors & (numberOfColors - 1)) != 0)) {
             System.out.println("Not a power of 2");
             return;
         }
 
         int depth = (int) (Math.log(numberOfColors) / Math.log(2));
+        int width = image.getWidth();
+        int height = image.getHeight();
 
         // Store RGB values and location of each pixel in array
-        int[][] pixelArr = new int[picture.width() * picture.height()][5];
-        for (int i = 0; i < picture.width(); i++) {
-            for (int j = 0; j < picture.height(); j++) {
-                int pixelIndex = i + j * picture.width();
-                int RGBInt = picture.getRGB(i, j);
-                Color pixelColor = new Color(RGBInt);
+        int[][] pixelArr = new int[width * height][5];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                int pixelIndex = i + j * width;
+                int RGBInt = image.getRGB(i, j);
 
-                pixelArr[pixelIndex][0] = pixelColor.getRed();
-                pixelArr[pixelIndex][1] = pixelColor.getGreen();
-                pixelArr[pixelIndex][2] = pixelColor.getBlue();
+                pixelArr[pixelIndex][0] = (RGBInt >> 16) & 0xFF;
+                pixelArr[pixelIndex][1] = (RGBInt >> 8) & 0xFF;
+                pixelArr[pixelIndex][2] = RGBInt & 0xFF;
                 pixelArr[pixelIndex][3] = i;
                 pixelArr[pixelIndex][4] = j;
             }
@@ -43,18 +41,19 @@ public class Pixelator {
 
         // Recolor original picture w new color palette
         for (int i = 0; i < pixelArr.length; i++) {
-            picture.set(pixelArr[i][3], pixelArr[i][4],
-                new Color(pixelArr[i][0], pixelArr[i][1], pixelArr[i][2]));
+            image.setRGB(pixelArr[i][3], pixelArr[i][4],
+                new Color(pixelArr[i][0], pixelArr[i][1],
+                    pixelArr[i][2]).getRGB());
         }
 
         // Recolor larger pixels with dominant color from each
         int pixelWidth = 8;
-        for (int i = 0; i < picture.width(); i = i + pixelWidth) {
-            for (int j = 0; j < picture.height(); j = j + pixelWidth) {
+        for (int i = 0; i < width; i = i + pixelWidth) {
+            for (int j = 0; j < height; j = j + pixelWidth) {
                 HashMap<Integer, Integer> colorFrequency = new HashMap<Integer, Integer>();
                 for (int k = 0; k < pixelWidth; k++) {
                     for (int l = 0; l < pixelWidth; l++) {
-                        int color = picture.getRGB(i + k, j + l);
+                        int color = image.getRGB(i + k, j + l);
                         int count = colorFrequency.getOrDefault(color, 0);
                         colorFrequency.put(color, count + 1);
                     }
@@ -71,7 +70,7 @@ public class Pixelator {
                 
                 for (int k = 0; k < pixelWidth; k++) {
                     for (int l = 0; l < pixelWidth; l++) {
-                        picture.setRGB(i + k, j + l, dominantColor);
+                        image.setRGB(i + k, j + l, dominantColor);
                     }
                 }
             }

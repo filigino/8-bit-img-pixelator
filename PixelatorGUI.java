@@ -1,12 +1,18 @@
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.filechooser.*;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
 public class PixelatorGUI implements ActionListener {
@@ -25,8 +31,8 @@ public class PixelatorGUI implements ActionListener {
     JButton pixelateButton;
     JButton saveButton;
 
-    Picture originalPicture;
-    Picture pixelatedPicture;
+    BufferedImage originalImage;
+    BufferedImage pixelatedImage;
     int numberOfColors;
 
     public PixelatorGUI() {
@@ -95,20 +101,32 @@ public class PixelatorGUI implements ActionListener {
                 imageLabel.setText(
                     fileChooser.getSelectedFile().getName()
                 );
-                originalPicture = new Picture(new File(
-                    fileChooser.getSelectedFile().getAbsolutePath()
-                ));
-                originalPicture.show();
+                try {
+                    originalImage = ImageIO.read(
+                        new File(fileChooser.getSelectedFile().getAbsolutePath()));
+                } catch (IOException ioe) {
+                    System.out.println("IOException");
+                }
+                show(originalImage);
             }
         } else if (command.equals("Pixelate!")) {
-            if (originalPicture != null) {
-                pixelatedPicture = new Picture(originalPicture);
-                Pixelator.pixelate(pixelatedPicture, numberOfColors);
-                pixelatedPicture.show();
+            if (originalImage != null) {
+                int width  = originalImage.getWidth();
+                int height = originalImage.getHeight();
+                pixelatedImage = new BufferedImage(width, height,
+                    BufferedImage.TYPE_INT_ARGB_PRE); // debug
+
+                for (int col = 0; col < width; col++)
+                    for (int row = 0; row < height; row++)
+                        pixelatedImage.setRGB(col, row, 
+                            originalImage.getRGB(col, row));
+
+                Pixelator.pixelate(pixelatedImage, numberOfColors);
+                show(pixelatedImage);
             }
         } else if (command.equals("Save")) {
-            if (pixelatedPicture != null) {
-                pixelatedPicture.save(imageLabel.getText());
+            if (pixelatedImage != null) {
+                // pixelatedImage.save(imageLabel.getText()); // debug
             }
         } else if (command.equals("+")) {
             if (numberOfColors < 1024) {
@@ -121,6 +139,22 @@ public class PixelatorGUI implements ActionListener {
                 numberOfColorsLabel.setText(Integer.toString(numberOfColors));
             }
         }
+    }
+
+    private void show(BufferedImage image) {
+        JFrame frame = new JFrame();
+
+        JMenuBar menuBar = new JMenuBar();
+        JMenu menu = new JMenu("File");
+        menuBar.add(menu);
+        frame.setJMenuBar(menuBar);
+
+        frame.setContentPane(new JLabel(new ImageIcon(image)));
+        // f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setResizable(false);
+        frame.pack();
+        frame.setVisible(true);
     }
 
     public static void main(String[] args) {

@@ -165,19 +165,13 @@ public class PixelatorGUI implements ActionListener {
     }
 
     private void save(BufferedImage image) {
-        File file = new File(imageLabel.getText());
-        String filename = file.getName();
-
-        String suffix = filename.substring(filename.lastIndexOf('.') + 1);
-        if ("jpg".equalsIgnoreCase(suffix) || "png".equalsIgnoreCase(suffix)) {
-            try {
-                ImageIO.write(image, suffix, file);
-            }
-            catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-        } else {
-            System.out.println("Error: filename must end in .jpg or .png");
+        String fileName = imageLabel.getText();
+        File file = new File(fileName.substring(0, fileName.lastIndexOf("."))
+            + "-" + Integer.toString(numberOfColors) + ".png");
+        try {
+            ImageIO.write(image, "png", file);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
         }
     }
 
